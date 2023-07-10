@@ -3,23 +3,6 @@ import json
 
 url = 'http://localhost:8765'
 
-def get_notes_with_shared_values(value, deck_name):
-    request_data = {
-        'action': 'findNotes',
-        'version': 6,
-        'params': {
-            'query': f'"WordTranslation:*{value}*" "deck:{deck_name}"'
-        }
-    }
-
-    response = requests.post(url, data=json.dumps(request_data))
-    if response.status_code == 200:
-        data = response.json()
-        return data['result']
-    else:
-        print('AnkiConnect request failed.')
-        return []
-
 def find_cards_with_shared_values(deck_name):
     request_data = {
         'action': 'findNotes',
@@ -33,7 +16,7 @@ def find_cards_with_shared_values(deck_name):
     if response.status_code == 200:
         data = response.json()
         note_ids = data['result']
-        shared_values = set()
+        word_note_map = {}
 
         for note_id in note_ids:
             request_data = {
@@ -52,12 +35,14 @@ def find_cards_with_shared_values(deck_name):
                 split_values = word_translation.split(',')
 
                 for value in split_values:
-                    shared_values.add(value.strip())
+                    word = value.strip()
+                    if word not in word_note_map:
+                        word_note_map[word] = set()
+                    word_note_map[word].add(note_id)
 
-        for shared_value in shared_values:
-            note_ids_with_value = get_notes_with_shared_values(shared_value, deck_name)
+        for word, note_ids_with_value in word_note_map.items():
             if len(note_ids_with_value) > 1:
-                print(f'Cards with shared value "{shared_value}": {note_ids_with_value}')
+                print(f'Cards with shared value "{word}": {note_ids_with_value}')
 
     else:
         print('AnkiConnect request failed.')
