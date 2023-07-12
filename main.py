@@ -16,22 +16,30 @@ def find_cards_with_shared_values(deck_name):
     if response.status_code == 200:
         data = response.json()
         note_ids = data['result']
-        word_note_map = {}
+        note_info_map = {}
 
-        for note_id in note_ids:
-            request_data = {
-                'action': 'notesInfo',
-                'version': 6,
-                'params': {
-                    'notes': [note_id]
-                }
+        request_data = {
+            'action': 'notesInfo',
+            'version': 6,
+            'params': {
+                'notes': note_ids
             }
+        }
 
-            response = requests.post(url, data=json.dumps(request_data))
-            if response.status_code == 200:
-                data = response.json()
-                note_info = data['result'][0]
-                word_translation = note_info['fields']['WordTranslation']['value']
+        response = requests.post(url, data=json.dumps(request_data))
+        if response.status_code == 200:
+            data = response.json()
+            note_info_list = data['result']
+
+            for note_info in note_info_list:
+                note_id = note_info['noteId']
+                note_fields = note_info['fields']
+                note_info_map[note_id] = note_fields
+
+            word_note_map = {}
+
+            for note_id, note_fields in note_info_map.items():
+                word_translation = note_fields['WordTranslation']['value']
                 split_values = word_translation.split(',')
 
                 for value in split_values:
@@ -40,9 +48,20 @@ def find_cards_with_shared_values(deck_name):
                         word_note_map[word] = set()
                     word_note_map[word].add(note_id)
 
-        for word, note_ids_with_value in word_note_map.items():
-            if len(note_ids_with_value) > 1:
-                print(f'Cards with shared value "{word}": {note_ids_with_value}')
+            for word, note_ids_with_value in word_note_map.items():
+                for note_id in note_ids_with_value:
+                    note_fields = note_info_map[note_id]
+                    word_disambiguate = note_fields.get('WordTranslationDisambiguate', {'value': ''})['value']
+                    other_note_ids = note_ids_with_value - {note_id}
+
+                    for other_note_id in other_note_ids:
+                        other_note_fields = note_info_map[other_note_id]
+                        other_word = other_note_fields.get('Word', {'value': ''})['value']
+                        if word_disambiguate.find(other_word) == -1:
+                            print(f'"{other_word}" not found in disambiguate list for "{word}" ({note_id}): [{word_disambiguate}]')
+
+        else:
+            print('AnkiConnect request failed.')
 
     else:
         print('AnkiConnect request failed.')
