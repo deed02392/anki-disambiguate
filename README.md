@@ -24,4 +24,4 @@ I need to update both these cards' `WordTranslationDisambiguation` fields to ref
 
 ![](./img/after_disambiguate.png)
 
-This wasn't the best example, since "light" wouldn't be a valid translation of "light", but hopefully it illustrates the idea for the cases when the English side of your card is a single ambiguous word.
+This wasn't the best example, since "light" already indicates that "einfach" wouldn't be a valid translation, but hopefully it illustrates the idea for the cases when the English side of your card is a single ambiguous word.
